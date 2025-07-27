@@ -1,7 +1,7 @@
 public abstract class Message {
     private String requestType = "GET";
     private String connectionType = "HTTP/1.1";
-    private Header header;
+    private Header header = new Header(new String[0]);
     private boolean invalid = false;
     private byte[] messageBody = new byte[0];
 
