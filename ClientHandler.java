@@ -50,7 +50,9 @@ public class ClientHandler implements Runnable {
                         break;
                     }
 
-                    if (request.contentExpected()) {
+                    if (!request.messageComplete()) {
+                        bytesArrayStream.reset();
+                        bytesArrayStream.write(buffer, request.getHeaderEndLocation(), bytesRead - request.getHeaderEndLocation());
                         while (!request.messageComplete())  {
                             bytesRead = clientInputStream.read(buffer);
                             if (bytesRead == -1 || bytesRead == 0)
@@ -128,7 +130,9 @@ public class ClientHandler implements Runnable {
             if (response.isInvalid()) 
                 return new Response(request, new ResponseFile(500, "Invalid response returned."));
 
-            if (response.contentExpected()) {
+            if (!response.messageComplete()) {
+                bytesArrayStream.reset();
+                bytesArrayStream.write(buffer, response.getHeaderEndLocation(), bytesRead - response.getHeaderEndLocation());
                 while (!response.messageComplete())  {
                     bytesRead = originInputStream.read(buffer);
                     if (bytesRead == -1 || bytesRead == 0)

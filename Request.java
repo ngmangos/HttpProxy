@@ -21,6 +21,10 @@ public class Request {
         return host + ":" + port;
     }
 
+    public int getHeaderEndLocation() {
+        return headerEndLocation;
+    }
+
     public String getRequestType() {
         return requestType;
     }
@@ -58,6 +62,8 @@ public class Request {
     }
 
     public boolean messageComplete() {
+        if (!contentExpected())
+            return true;
         if (header.hasHeader("transfer-encoding"))
             return false;
         if (!header.hasHeader("content-length"))
@@ -73,7 +79,7 @@ public class Request {
     }
 
     public void addToMessage(byte[] continuedBody) {
-       messageBody = Arrays.copyOfRange(continuedBody, headerEndLocation, continuedBody.length);
+       messageBody = continuedBody;
     }
 
     public String buildServerHeaders() {

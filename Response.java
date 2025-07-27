@@ -33,11 +33,17 @@ public class Response {
         return statusCode;
     }
 
+    public int getHeaderEndLocation() {
+        return headerEndLocation;
+    }
+
     public String getServerURL() {
         return originServerName + ":" + originServerPort;
     }
 
     public boolean messageComplete() {
+        if (!contentExpected())
+            return true;
         if (header.hasHeader("transfer-encoding"))
             return false;
         if (!header.hasHeader("content-length"))
@@ -59,7 +65,7 @@ public class Response {
     }
 
     public void addToMessage(byte[] continuedBody) {
-       messageBody = Arrays.copyOfRange(continuedBody, headerEndLocation, continuedBody.length);
+       messageBody = continuedBody;
     }
 
     public String buildClientHeaders() {
@@ -74,10 +80,6 @@ public class Response {
     
     public String getDateString() {
         return responseDate.format(DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss Z"));
-    }
-
-    public static String generateConnectionResponse() {
-        return "HTTP/1.1 200 Connection Established\r\n\r\n";
     }
 
     public Response(String response, byte[] responseBytes, Request request) {
