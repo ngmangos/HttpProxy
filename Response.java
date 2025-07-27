@@ -109,7 +109,6 @@ public class Response {
         Matcher matcher = getPattern.matcher(responseLine);
 
         if (!matcher.find()) {
-            System.out.println("Not a valid response line.");
             invalid = true;
             return;
         }
@@ -133,5 +132,12 @@ public class Response {
         header.updateHeader(request.getClientConnectionHeader());
         header.updateHeader("Content-Length: " + responseFile.getContentLength().toString());
         header.updateHeader("Content-Type: " + responseFile.getContentType());
+    }
+
+    public Response(int statusCodeArg, String reasonPhraseArg, String requestTypeArg) {
+        statusCode = statusCodeArg;
+        reasonPhrase = reasonPhraseArg;
+        requestType = requestTypeArg;
+        header = new Header(new String[0]);
     }
 }

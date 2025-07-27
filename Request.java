@@ -85,16 +85,17 @@ public class Request {
     public Request(String request) {
         String[] requestArray = request.split("\r\n\r\n", 2);
         if (requestArray.length != 2) {
+            System.out.println(1);
             empty = true;
             return;
         }
 
         String[] headerLines = requestArray[0].split("\r\n");
         messageBody = requestArray[1];
-
+        
         requestLine = headerLines.length > 0 ? headerLines[0].trim() : "";
-
         if (requestLine.isEmpty()) {
+            System.out.println(2);
             empty = true;
             return;
         }
@@ -102,11 +103,13 @@ public class Request {
         String[] requestLineArray = requestLine.split(" ");
         requestType = requestLineArray[0].trim();
         if (!Arrays.asList("GET", "HEAD", "POST", "CONNECT").stream().anyMatch(method -> method.equals(requestType))) {
+            System.out.println(3);
             invalid = true;
             return;
         }
 
         if (requestLineArray.length != 3) {
+            System.out.println(4);
             invalid = true;
             return;
         }
@@ -117,6 +120,7 @@ public class Request {
         Matcher matcher = getPattern.matcher(requestLine);
 
         if (!matcher.matches()) {
+            System.out.println(5);
             invalid = true;
             return;
         }
@@ -126,6 +130,7 @@ public class Request {
         String requestTarget = requestLineArray[1].trim();
 
         if (requestType.equals("CONNECT")) {
+            System.out.println(6);
             handleConnect(requestTarget);
             return;
         }
@@ -138,16 +143,16 @@ public class Request {
         header.updateHeader("Connection: close");
         header.removeHeader("Proxy-Connection");
 
-        
         if (requestTarget.toLowerCase().startsWith("http://")) {
             requestTarget = requestTarget.substring(7);
         } else {
+            System.out.println(7);
             invalid = true;
             return;
         }  
         
         String[] requestTargetArray = requestTarget.split("/", 2);
-        host = requestTargetArray[0].toLowerCase();
+        host = requestTargetArray[0].trim().toLowerCase();
         if (requestTargetArray.length < 2) {
             file = "/";
         } else 

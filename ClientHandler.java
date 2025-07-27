@@ -33,14 +33,13 @@ public class ClientHandler implements Runnable {
                     
                     String requestString = new String(buffer, 0, bytesRead);
                     Request request = new Request(requestString);
-
                     Response response;
                     if (request.getHost().isEmpty()) {
                         response = new Response(request, new ResponseFile(400, "No host in request."));
                         returnException(clientOutputStream, request, response);
                         break;
-                    } else if (request.getPort() == proxy.getPort() && request.getHost() == proxy.getHost()) {
-                        response = new Response(request, new ResponseFile(400, "Proxy address detected in request."));
+                    } else if (request.getPort() == proxy.getPort() && request.getHost().equals(proxy.getHost())) {
+                        response = new Response(request, new ResponseFile(421, "Proxy address detected in request."));
                         returnException(clientOutputStream, request, response);
                         break;
                     } else if (request.isEmpty() || request.isInvalid()) {
@@ -74,6 +73,7 @@ public class ClientHandler implements Runnable {
                         } else {
                             cachedlog = "M";
                             response = handleOrigin(request, proxy);
+                            cache.addResponseToCache(response);
                         }
                         cache.unlock();
                     } else {
@@ -107,6 +107,7 @@ public class ClientHandler implements Runnable {
             InputStream originInputStream = originServerSocket.getInputStream();
             OutputStream originOutputStream = originServerSocket.getOutputStream()
         ) {
+            originServerSocket.setSoTimeout(proxy.getTimeOut());
             originOutputStream.write(request.buildServerRequest().getBytes());
             originOutputStream.flush();
 
@@ -134,6 +135,8 @@ public class ClientHandler implements Runnable {
             response = new Response(request, new ResponseFile(502, "Could not resolve."));
         } catch (ConnectException e) {
             response = new Response(request, new ResponseFile(502, "Connection refused."));
+        } catch (SocketTimeoutException e) {
+            response = new Response(request, new ResponseFile(504, "Gateway timed out."));
         } catch (IOException e) {
             response = new Response(request, new ResponseFile(502, "Closed unexpectedly."));
         }
@@ -152,8 +155,10 @@ public class ClientHandler implements Runnable {
         try (Socket originServerSocket = new Socket(request.getHost(), request.getPort());
             InputStream serverInputStream = originServerSocket.getInputStream();
             OutputStream serverOutputStream = originServerSocket.getOutputStream()) {
-            clientOutputStream.write(Response.generateConnectionResponse().getBytes());
+            response = new Response(200, "Connection Established", "CONNECT");
+            clientOutputStream.write(response.buildClientResponse().getBytes());
             clientOutputStream.flush();
+            printLog("-", request, response);
             
             Thread clientToServerThread = new Thread(new ConnectionThread(clientOutputStream, serverInputStream));
             Thread serverToClientThread = new Thread(new ConnectionThread(serverOutputStream, clientInputStream));
@@ -167,7 +172,6 @@ public class ClientHandler implements Runnable {
             returnException(clientOutputStream, request, response);
         } catch (IOException e) {
             // IO Error with streams
-
         } catch (InterruptedException e) {
             // do something
         }
@@ -177,7 +181,7 @@ public class ClientHandler implements Runnable {
         // This function is used to send exceptions to the client, if there is an IO exception there
         // is nothing else we can do but stop gracefully
         try {
-            clientOutputStream.write(Response.generateConnectionResponse().getBytes());
+            clientOutputStream.write(response.buildClientResponse().getBytes());
         } catch (IOException e) {
         } finally {
             printLog("-", request, response);

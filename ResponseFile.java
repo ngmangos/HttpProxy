@@ -35,8 +35,8 @@ public class ResponseFile {
     }
 
     public ResponseFile(int statusCodeArg, String bodyPhrase) {
-        statusCode = statusCodeArg;
-        messageBody = "<h1> Exception " + statusCode + reasonPhraseDict.get(statusCode) + "</h1>" +
+        this.statusCode = statusCodeArg;
+        this.messageBody = "<h1> Exception " + statusCode + " " + reasonPhraseDict.get(statusCode) + "</h1>" +
             "<p>" + bodyPhrase + "</p>";
     }
 }
