@@ -13,8 +13,9 @@ public class Request {
     private boolean invalid = false;
     private String clientConnectionHeader = "Connection: keep-alive";
     private boolean connectionClose = false;
-    private String messageBody = "";
+    private byte[] messageBody = new byte[0];
     private String requestLine = "";
+    private int headerEndLocation;
 
     public String getURL() {
         return host + ":" + port;
@@ -68,30 +69,34 @@ public class Request {
         } catch (NumberFormatException e) {
             return true;
         }
-        return messageBody.length() >= contentLength;
+        return messageBody.length >= contentLength;
     }
 
-    public void addToMessage(String messageContinued) {
-        messageBody += messageContinued;
+    public void addToMessage(byte[] continuedBody) {
+       messageBody = Arrays.copyOfRange(continuedBody, headerEndLocation, continuedBody.length);
     }
 
-    public String buildServerRequest() {
+    public String buildServerHeaders() {
         String request = requestType + " " + file + " " + connectionType + "\r\n" +
-                        header.getHeaderString() + "\r\n" +
-                        messageBody;
+                        header.getHeaderString() + "\r\n";
         return request;
     }
 
-    public Request(String request) {
-        String[] requestArray = request.split("\r\n\r\n", 2);
-        if (requestArray.length != 2) {
+    public byte[] getMessageBody() {
+        return messageBody;
+    }
+
+    public Request(String request, byte[] requestBytes) {
+        int bodyLocation = request.indexOf("\r\n\r\n");
+        if (bodyLocation == -1) {
             System.out.println(1);
             empty = true;
             return;
         }
+        headerEndLocation = bodyLocation + 4;
 
-        String[] headerLines = requestArray[0].split("\r\n");
-        messageBody = requestArray[1];
+        String[] headerLines = request.substring(0, bodyLocation).split("\r\n");
+        messageBody = Arrays.copyOfRange(requestBytes, headerEndLocation, requestBytes.length);
         
         requestLine = headerLines.length > 0 ? headerLines[0].trim() : "";
         if (requestLine.isEmpty()) {

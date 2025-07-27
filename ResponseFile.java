@@ -26,10 +26,6 @@ public class ResponseFile {
         return messageBody;
     }
 
-    public Integer getContentLength() {
-        return messageBody.length();
-    }
-
     public String getContentType() {
         return contentType;
     }

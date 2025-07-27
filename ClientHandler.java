@@ -28,11 +28,13 @@ public class ClientHandler implements Runnable {
                     clientSocket.setSoTimeout(proxy.getTimeOut());
                     byte[] buffer = new byte[1024];
                     int bytesRead = clientInputStream.read(buffer);
+                    ByteArrayOutputStream bytesArrayStream = new ByteArrayOutputStream();
                     
                     if (bytesRead == -1 || bytesRead == 0) break;
+                    bytesArrayStream.write(buffer, 0, bytesRead);
                     
                     String requestString = new String(buffer, 0, bytesRead);
-                    Request request = new Request(requestString);
+                    Request request = new Request(requestString, bytesArrayStream.toByteArray());
                     Response response;
                     if (request.getHost().isEmpty()) {
                         response = new Response(request, new ResponseFile(400, "No host in request."));
@@ -53,8 +55,8 @@ public class ClientHandler implements Runnable {
                             bytesRead = clientInputStream.read(buffer);
                             if (bytesRead == -1 || bytesRead == 0)
                                 break;
-                            requestString = new String(buffer, 0, bytesRead);
-                            request.addToMessage(requestString);
+                            bytesArrayStream.write(buffer, 0, bytesRead);
+                            request.addToMessage(bytesArrayStream.toByteArray());
                         }
                     }
 
@@ -80,7 +82,8 @@ public class ClientHandler implements Runnable {
                         response = handleOrigin(request, proxy);
                         
                     }
-                    clientOutputStream.write(response.buildClientResponse().getBytes());
+                    clientOutputStream.write(response.buildClientHeaders().getBytes());
+                    clientOutputStream.write(response.getMessageBody());
                     clientOutputStream.flush();
 
                     if (request.connectionClose()) {
@@ -108,16 +111,19 @@ public class ClientHandler implements Runnable {
             OutputStream originOutputStream = originServerSocket.getOutputStream()
         ) {
             originServerSocket.setSoTimeout(proxy.getTimeOut());
-            originOutputStream.write(request.buildServerRequest().getBytes());
+            originOutputStream.write(request.buildServerHeaders().getBytes());
+            originOutputStream.write(request.getMessageBody());
             originOutputStream.flush();
 
             byte[] buffer = new byte[1024];
             int bytesRead = originInputStream.read(buffer);
+            ByteArrayOutputStream bytesArrayStream = new ByteArrayOutputStream();
 
             if (bytesRead == -1 || bytesRead == 0) throw new IOException("Closed unexpectedly.");
             
             String responseString = new String(buffer, 0, bytesRead);
-            response = new Response(responseString, request);
+            bytesArrayStream.write(buffer, 0, bytesRead);
+            response = new Response(responseString, bytesArrayStream.toByteArray(), request);
             
             if (response.isInvalid()) 
                 return new Response(request, new ResponseFile(500, "Invalid response returned."));
@@ -127,8 +133,8 @@ public class ClientHandler implements Runnable {
                     bytesRead = originInputStream.read(buffer);
                     if (bytesRead == -1 || bytesRead == 0)
                         break;
-                    responseString = new String(buffer, 0, bytesRead);
-                    response.addToMessage(responseString);
+                    bytesArrayStream.write(buffer, 0, bytesRead);
+                    response.addToMessage(bytesArrayStream.toByteArray());
                 }
             }
         } catch (UnknownHostException e) {
@@ -156,7 +162,7 @@ public class ClientHandler implements Runnable {
             InputStream serverInputStream = originServerSocket.getInputStream();
             OutputStream serverOutputStream = originServerSocket.getOutputStream()) {
             response = new Response(200, "Connection Established", "CONNECT");
-            clientOutputStream.write(response.buildClientResponse().getBytes());
+            clientOutputStream.write(response.buildClientHeaders().getBytes());
             clientOutputStream.flush();
             printLog("-", request, response);
             
@@ -181,7 +187,8 @@ public class ClientHandler implements Runnable {
         // This function is used to send exceptions to the client, if there is an IO exception there
         // is nothing else we can do but stop gracefully
         try {
-            clientOutputStream.write(response.buildClientResponse().getBytes());
+            clientOutputStream.write(response.buildClientHeaders().getBytes());
+            clientOutputStream.write(response.getMessageBody());
         } catch (IOException e) {
         } finally {
             printLog("-", request, response);
