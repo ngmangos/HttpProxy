@@ -211,8 +211,7 @@ public class ClientHandler implements Runnable {
                     int bytesRead = inputStream.read(buffer);
                     if (bytesRead == -1 || bytesRead == 0) break;
 
-                    String intermediateString = new String(buffer, 0, bytesRead);
-                    outputStream.write(intermediateString.getBytes());
+                    outputStream.write(buffer, 0, bytesRead);
                     outputStream.flush();
                 } catch (IOException e) {
                     return;
