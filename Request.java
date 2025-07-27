@@ -54,7 +54,6 @@ public class Request extends Message {
     public Request(String request, byte[] requestBytes) {
         int bodyLocation = request.indexOf("\r\n\r\n");
         if (bodyLocation == -1) {
-            System.out.println(1);
             empty = true;
             return;
         }
@@ -64,7 +63,6 @@ public class Request extends Message {
         
         requestLine = headerLines.length > 0 ? headerLines[0].trim() : "";
         if (requestLine.isEmpty()) {
-            System.out.println(2);
             empty = true;
             return;
         }
@@ -72,13 +70,11 @@ public class Request extends Message {
         String[] requestLineArray = requestLine.split(" ");
         setRequestType(requestLineArray[0].trim());
         if (!Arrays.asList("GET", "HEAD", "POST", "CONNECT").stream().anyMatch(method -> method.equals(getRequestType()))) {
-            System.out.println(3);
             setInvalid(true);
             return;
         }
 
         if (requestLineArray.length != 3) {
-            System.out.println(4);
             setInvalid(true);
             return;
         }
@@ -89,7 +85,6 @@ public class Request extends Message {
         Matcher matcher = getPattern.matcher(requestLine);
 
         if (!matcher.matches()) {
-            System.out.println(5);
             setInvalid(true);
             return;
         }
@@ -99,7 +94,6 @@ public class Request extends Message {
         String requestTarget = requestLineArray[1].trim();
 
         if (getRequestType().equals("CONNECT")) {
-            System.out.println(6);
             handleConnect(requestTarget);
             return;
         }
@@ -116,7 +110,6 @@ public class Request extends Message {
         if (requestTarget.toLowerCase().startsWith("http://")) {
             requestTarget = requestTarget.substring(7);
         } else {
-            System.out.println(7);
             setInvalid(true);
             return;
         }  
