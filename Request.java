@@ -111,6 +111,7 @@ public class Request extends Message {
         header.updateHeader("Via: 1.1 z5417382");
         header.updateHeader("Connection: close");
         header.removeHeader("Proxy-Connection");
+        setHeader(header);
 
         if (requestTarget.toLowerCase().startsWith("http://")) {
             requestTarget = requestTarget.substring(7);
