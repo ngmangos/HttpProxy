@@ -31,9 +31,11 @@ public class ClientHandler implements Runnable {
                     ByteArrayOutputStream bytesArrayStream = new ByteArrayOutputStream();
                     
                     if (bytesRead == -1 || bytesRead == 0) break;
-                    bytesArrayStream.write(buffer, 0, bytesRead);
                     
                     String requestString = new String(buffer, 0, bytesRead);
+                    int bodyStart = requestString.indexOf("\r\n\r\n") != -1 ? requestString.indexOf("\r\n\r\n") + 4 : 0;
+                    bytesArrayStream.write(buffer, bodyStart, bytesRead - bodyStart);
+
                     Request request = new Request(requestString, bytesArrayStream.toByteArray());
                     Response response;
                     if (request.getHost().isEmpty()) {
@@ -82,7 +84,7 @@ public class ClientHandler implements Runnable {
                         response = handleOrigin(request, proxy);
                         
                     }
-                    clientOutputStream.write(response.buildClientHeaders().getBytes());
+                    clientOutputStream.write(response.buildHeaders().getBytes());
                     clientOutputStream.write(response.getMessageBody());
                     clientOutputStream.flush();
 
@@ -111,7 +113,7 @@ public class ClientHandler implements Runnable {
             OutputStream originOutputStream = originServerSocket.getOutputStream()
         ) {
             originServerSocket.setSoTimeout(proxy.getTimeOut());
-            originOutputStream.write(request.buildServerHeaders().getBytes());
+            originOutputStream.write(request.buildHeaders().getBytes());
             originOutputStream.write(request.getMessageBody());
             originOutputStream.flush();
 
@@ -122,7 +124,8 @@ public class ClientHandler implements Runnable {
             if (bytesRead == -1 || bytesRead == 0) throw new IOException("Closed unexpectedly.");
             
             String responseString = new String(buffer, 0, bytesRead);
-            bytesArrayStream.write(buffer, 0, bytesRead);
+            int bodyStart = responseString.indexOf("\r\n\r\n") != -1 ? responseString.indexOf("\r\n\r\n") + 4 : 0;
+            bytesArrayStream.write(buffer, bodyStart, bytesRead - bodyStart);
             response = new Response(responseString, bytesArrayStream.toByteArray(), request);
             
             if (response.isInvalid()) 
@@ -162,7 +165,7 @@ public class ClientHandler implements Runnable {
             InputStream serverInputStream = originServerSocket.getInputStream();
             OutputStream serverOutputStream = originServerSocket.getOutputStream()) {
             response = new Response(200, "Connection Established", "CONNECT");
-            clientOutputStream.write(response.buildClientHeaders().getBytes());
+            clientOutputStream.write(response.buildHeaders().getBytes());
             clientOutputStream.flush();
             printLog("-", request, response);
             
@@ -187,7 +190,7 @@ public class ClientHandler implements Runnable {
         // This function is used to send exceptions to the client, if there is an IO exception there
         // is nothing else we can do but stop gracefully
         try {
-            clientOutputStream.write(response.buildClientHeaders().getBytes());
+            clientOutputStream.write(response.buildHeaders().getBytes());
             clientOutputStream.write(response.getMessageBody());
         } catch (IOException e) {
         } finally {
@@ -199,9 +202,9 @@ public class ClientHandler implements Runnable {
         private OutputStream outputStream;
         private InputStream inputStream;
 
-        public ConnectionThread(OutputStream outputStreamArg, InputStream inputStreamArg) {
-            outputStream = outputStreamArg;
-            inputStream = inputStreamArg;
+        public ConnectionThread(OutputStream outputStream, InputStream inputStream) {
+            this.outputStream = outputStream;
+            this.inputStream = inputStream;
         }
 
         public void run() {

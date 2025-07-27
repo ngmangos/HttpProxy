@@ -2,27 +2,18 @@ import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Request {
-    private String requestType = "";
+public class Request extends Message {
     private String host = "";
     private int port = 80;
     private String file = "";
-    private String connectionType = "HTTP/1.1";
     private Header header;
     private boolean empty = false;
-    private boolean invalid = false;
     private String clientConnectionHeader = "Connection: keep-alive";
     private boolean connectionClose = false;
-    private byte[] messageBody = new byte[0];
     private String requestLine = "";
-    private int headerEndLocation;
 
     public String getURL() {
         return host + ":" + port;
-    }
-
-    public String getRequestType() {
-        return requestType;
     }
 
     public int getPort() {
@@ -31,10 +22,6 @@ public class Request {
 
     public String getHost() {
         return host;
-    }
-
-    public boolean isInvalid() {
-        return invalid;
     }
 
     public boolean isEmpty() {
@@ -50,43 +37,18 @@ public class Request {
     }
 
     public boolean contentExpected() {
-        return requestType.equals("POST");
+        return getRequestType().equals("POST");
     }
+
 
     public String getRequestLine() {
         return requestLine;
     }
 
-    public boolean messageComplete() {
-        if (!contentExpected())
-            return true;
-        if (header.hasHeader("transfer-encoding"))
-            return false;
-        if (!header.hasHeader("content-length"))
-            return true;
-        String headerString = header.getHeader("content-length");
-        int contentLength = 0;
-        try {
-            contentLength = Integer.parseInt(headerString);
-        } catch (NumberFormatException e) {
-            return true;
-        }
-        return messageBody.length - headerEndLocation >= contentLength;
-    }
-
-    public void addToMessage(byte[] continuedBody) {
-       messageBody = continuedBody;
-    }
-
-    public String buildServerHeaders() {
-        String request = requestType + " " + file + " " + connectionType + "\r\n" +
-                        header.getHeaderString() + "\r\n";
+    public String buildHeaders() {
+        String request = getRequestType() + " " + file + " " + getConnectionType() + "\r\n" +
+            header.getHeaderString() + "\r\n";
         return request;
-    }
-
-    public byte[] getMessageBody() {
-        System.out.println("Message body length: " + Integer.toString(messageBody.length) + " HeaderEnd: " + Integer.toString(headerEndLocation));
-        return Arrays.copyOfRange(messageBody, headerEndLocation, messageBody.length);
     }
 
     public Request(String request, byte[] requestBytes) {
@@ -96,10 +58,9 @@ public class Request {
             empty = true;
             return;
         }
-        headerEndLocation = bodyLocation + 4;
 
         String[] headerLines = request.substring(0, bodyLocation).split("\r\n");
-        messageBody = requestBytes;
+        setMessageBody(requestBytes);
         
         requestLine = headerLines.length > 0 ? headerLines[0].trim() : "";
         if (requestLine.isEmpty()) {
@@ -109,27 +70,27 @@ public class Request {
         }
 
         String[] requestLineArray = requestLine.split(" ");
-        requestType = requestLineArray[0].trim();
-        if (!Arrays.asList("GET", "HEAD", "POST", "CONNECT").stream().anyMatch(method -> method.equals(requestType))) {
+        setRequestType(requestLineArray[0].trim());
+        if (!Arrays.asList("GET", "HEAD", "POST", "CONNECT").stream().anyMatch(method -> method.equals(getRequestType()))) {
             System.out.println(3);
-            invalid = true;
+            setInvalid(true);
             return;
         }
 
         if (requestLineArray.length != 3) {
             System.out.println(4);
-            invalid = true;
+            setInvalid(true);
             return;
         }
 
-        connectionType = requestLineArray[2];
+        setConnectionType(requestLineArray[2]);
 
-        Pattern getPattern = Pattern.compile(requestType + "\\s+(.*)\\s+HTTP/1\\.1");
+        Pattern getPattern = Pattern.compile(getRequestType() + "\\s+(.*)\\s+HTTP/1\\.1");
         Matcher matcher = getPattern.matcher(requestLine);
 
         if (!matcher.matches()) {
             System.out.println(5);
-            invalid = true;
+            setInvalid(true);
             return;
         }
 
@@ -137,7 +98,7 @@ public class Request {
 
         String requestTarget = requestLineArray[1].trim();
 
-        if (requestType.equals("CONNECT")) {
+        if (getRequestType().equals("CONNECT")) {
             System.out.println(6);
             handleConnect(requestTarget);
             return;
@@ -155,7 +116,7 @@ public class Request {
             requestTarget = requestTarget.substring(7);
         } else {
             System.out.println(7);
-            invalid = true;
+            setInvalid(true);
             return;
         }  
         
@@ -176,12 +137,12 @@ public class Request {
     private void handleConnect(String requestTarget) {
         // Request in authority form
         if (!requestTarget.contains(":")) {
-            this.invalid = true;
+            setInvalid(true);
             return;
         }
         String[] fileCheckArray = requestTarget.split("/");
         if (fileCheckArray.length > 1 && !fileCheckArray[1].equals("")) {
-            this.invalid = true;
+            setInvalid(true);
             return;
         }
         

@@ -34,7 +34,6 @@ public class Header {
         String resultString = "";
         for (Map.Entry<String, String> entry : headers.entrySet()) 
             resultString += entry.getKey() + ":" + entry.getValue() + "\r\n";
-        resultString += "\r\n";
         return resultString;
     }
 }
