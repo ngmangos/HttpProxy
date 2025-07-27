@@ -21,10 +21,6 @@ public class Request {
         return host + ":" + port;
     }
 
-    public int getHeaderEndLocation() {
-        return headerEndLocation;
-    }
-
     public String getRequestType() {
         return requestType;
     }
@@ -75,7 +71,7 @@ public class Request {
         } catch (NumberFormatException e) {
             return true;
         }
-        return messageBody.length >= contentLength;
+        return messageBody.length - headerEndLocation >= contentLength;
     }
 
     public void addToMessage(byte[] continuedBody) {
@@ -89,7 +85,8 @@ public class Request {
     }
 
     public byte[] getMessageBody() {
-        return messageBody;
+        System.out.println("Message body length: " + Integer.toString(messageBody.length) + " HeaderEnd: " + Integer.toString(headerEndLocation));
+        return Arrays.copyOfRange(messageBody, headerEndLocation, messageBody.length);
     }
 
     public Request(String request, byte[] requestBytes) {
@@ -102,7 +99,7 @@ public class Request {
         headerEndLocation = bodyLocation + 4;
 
         String[] headerLines = request.substring(0, bodyLocation).split("\r\n");
-        messageBody = Arrays.copyOfRange(requestBytes, headerEndLocation, requestBytes.length);
+        messageBody = requestBytes;
         
         requestLine = headerLines.length > 0 ? headerLines[0].trim() : "";
         if (requestLine.isEmpty()) {

@@ -18,7 +18,7 @@ public class Response {
     private int headerEndLocation;
 
     public int getContentLength() {
-        return messageBody.length;
+        return messageBody.length - headerEndLocation;
     }
 
     public String getRequestType() {
@@ -31,10 +31,6 @@ public class Response {
 
     public int getStatusCode() {
         return statusCode;
-    }
-
-    public int getHeaderEndLocation() {
-        return headerEndLocation;
     }
 
     public String getServerURL() {
@@ -75,7 +71,7 @@ public class Response {
     }
 
     public byte[] getMessageBody() {
-        return messageBody;
+        return Arrays.copyOfRange(messageBody, headerEndLocation, messageBody.length);
     }
     
     public String getDateString() {
@@ -116,7 +112,7 @@ public class Response {
         statusCode = Integer.parseInt(responseLineArray[1]);
         reasonPhrase = responseLineArray.length == 3 ? responseLineArray[2] : "";
         if (statusCode != 204 || statusCode != 304)
-            messageBody = Arrays.copyOfRange(responseBytes, headerEndLocation, responseBytes.length);
+            messageBody = responseBytes;
 
         Pattern getPattern = Pattern.compile("HTTP/1\\.1\\s+(\\d{3})(.*)");
         Matcher matcher = getPattern.matcher(responseLine);
