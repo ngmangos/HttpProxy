@@ -13,7 +13,7 @@ public class Request extends Message {
     private String requestLine = "";
 
     public String getURL() {
-        return host + ":" + port;
+        return host + ":" + Integer.toString(port) + file;
     }
 
     public int getPort() {

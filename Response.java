@@ -8,15 +8,14 @@ public class Response extends Message {
     private ZonedDateTime responseDate = ZonedDateTime.now();
     private int statusCode = 200;
     private String reasonPhrase = "OK";
-    private int originServerPort = 80;
-    private String originServerName;
+    private String requestURL = "";
 
     public int getStatusCode() {
         return statusCode;
     }
 
-    public String getServerURL() {
-        return originServerName + ":" + originServerPort;
+    public String getRequestURL() {
+        return requestURL;
     }
 
     public boolean contentExpected() {
@@ -80,8 +79,7 @@ public class Response extends Message {
         header.updateHeader(request.getClientConnectionHeader());
         setHeader(header);
         setRequestType(request.getRequestType());
-        originServerPort = request.getPort();
-        originServerName = request.getHost();
+        requestURL = request.getURL();
     }
 
     public Response(Request request, ResponseFile responseFile) {

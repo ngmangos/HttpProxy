@@ -40,7 +40,7 @@ public class Cache {
         if (contentSize > maxObjectSize || response.getStatusCode() != 200)
             return;
 
-        String key = response.getServerURL();
+        String key = response.getRequestURL();
         if (cacheMap.containsKey(key)) {
             cacheList.removeFirstOccurrence(key);
             totalCacheStorage -= cacheMap.get(key).getContentLength();

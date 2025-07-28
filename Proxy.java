@@ -59,14 +59,11 @@ public class Proxy {
             while (true) {
                 try {
                     Socket clientSocket = serverSocket.accept();
-                    System.out.println("Accepted connection");
                     new Thread(new ClientHandler(clientSocket, proxy)).start();
                 } catch (IOException e) {
                     System.err.println("Error accepting connection: " + e.getMessage());
                 }
             }
-        } catch (IOException e) {
-            System.err.println("Server error: " + e.getMessage());
-        }
+        } catch (IOException e) {}
     }
 }
