@@ -4,32 +4,33 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Response extends Message {
-    private int statusCode = 200;
-    private String reasonPhrase = "OK";
+    private int statusCode = 0;
+    private String reasonPhrase = "";
     private String requestURL = "";
 
-    public int getStatusCode() {
-        return statusCode;
+    // Constructor to generate the most simple response: No headers, no body
+    public Response(int statusCode, String reasonPhrase, String requestType) {
+        this.statusCode = statusCode;
+        this.reasonPhrase = reasonPhrase;
+        setRequestType(requestType);
+        setHeader(new Header(new String[0]));
     }
 
-    public String getRequestURL() {
-        return requestURL;
+    // Constructor to generate simple exception responses detected by proxy
+    public Response(Request request, ResponseFile responseFile) {
+        statusCode = responseFile.getStatusCode();
+        reasonPhrase = responseFile.getReasonPhrase();
+        setMessageBody(responseFile.getMessageBody().getBytes());
+        setRequestType(request.getRequestType());
+
+        Header header = new Header(new String[0]);
+        header.updateHeader(request.getClientConnectionHeader());
+        header.updateHeader("Content-Length: " + Integer.toString(getContentLength()));
+        header.updateHeader("Content-Type: " + responseFile.getContentType());
+        setHeader(header);
     }
 
-    public boolean contentExpected() {
-        if (statusCode < 200 || statusCode > 299) {
-            return true;
-        }
-        return getRequestType().equals("POST") || getRequestType().equals("GET");
-    }
-
-    public String buildHeaders() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(getConnectionType() + " " + statusCode + " " + reasonPhrase + "\r\n");
-        sb.append(getHeader().getHeaderString() + "\r\n");
-        return sb.toString();
-    }
-
+    // Constructor to generate responses based on origin server output
     public Response(String response, byte[] responseBytes, Request request) {
         int bodyLocation = response.indexOf("\r\n\r\n");
         if (bodyLocation == -1) {
@@ -78,23 +79,25 @@ public class Response extends Message {
         requestURL = request.getURL();
     }
 
-    public Response(Request request, ResponseFile responseFile) {
-        statusCode = responseFile.getStatusCode();
-        reasonPhrase = responseFile.getReasonPhrase();
-        setMessageBody(responseFile.getMessageBody().getBytes());
-        setRequestType(request.getRequestType());
-
-        Header header = new Header(new String[0]);
-        header.updateHeader(request.getClientConnectionHeader());
-        header.updateHeader("Content-Length: " + Integer.toString(getContentLength()));
-        header.updateHeader("Content-Type: " + responseFile.getContentType());
-        setHeader(header);
+    public int getStatusCode() {
+        return statusCode;
     }
 
-    public Response(int statusCode, String reasonPhrase, String requestType) {
-        this.statusCode = statusCode;
-        this.reasonPhrase = reasonPhrase;
-        setRequestType(requestType);
-        setHeader(new Header(new String[0]));
+    public String getRequestURL() {
+        return requestURL;
+    }
+
+    public boolean contentExpected() {
+        if (statusCode < 200 || statusCode > 299) {
+            return true;
+        }
+        return getRequestType().equals("POST") || getRequestType().equals("GET");
+    }
+
+    public String buildHeaders() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getConnectionType() + " " + statusCode + " " + reasonPhrase + "\r\n");
+        sb.append(getHeader().getHeaderString() + "\r\n");
+        return sb.toString();
     }
 }

@@ -12,6 +12,14 @@ public class Cache {
     private final LinkedList<String> cacheList = new LinkedList<String>();
     private int totalCacheStorage = 0;
 
+    public Cache(int maxObjectSize, int maxCacheSize) throws IllegalArgumentException {
+        if (maxObjectSize > maxCacheSize) {
+            throw new IllegalArgumentException("MaxObjectSize greater than MaxCacheSize");
+        }
+        this.maxCacheSize = maxCacheSize;
+        this.maxObjectSize = maxObjectSize;
+    }
+
     public void lock() { 
         lock.lock(); 
     }
@@ -54,13 +62,5 @@ public class Cache {
         cacheList.addFirst(key);
         totalCacheStorage += contentSize;
         cacheMap.put(key, response);
-    }
-
-    public Cache(int maxObjectSize, int maxCacheSize) throws IllegalArgumentException {
-        if (maxObjectSize > maxCacheSize) {
-            throw new IllegalArgumentException("MaxObjectSize greater than MaxCacheSize");
-        }
-        this.maxCacheSize = maxCacheSize;
-        this.maxObjectSize = maxObjectSize;
     }
 }

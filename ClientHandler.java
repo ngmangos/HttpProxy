@@ -28,50 +28,19 @@ public class ClientHandler implements Runnable {
             while (keepAlive) {
                 try {
                     clientSocket.setSoTimeout(proxy.getTimeOut());
-                    byte[] buffer = new byte[BUFFER_SIZE];
-                    int bytesRead = clientInputStream.read(buffer);
-                    ByteArrayOutputStream bytesArrayStream = new ByteArrayOutputStream();
-                    
-                    if (bytesRead == -1 || bytesRead == 0) {
-                        break;
-                    }
-                    
-                    String requestString = new String(buffer, 0, bytesRead);
-                    int bodyStart = requestString.indexOf("\r\n\r\n") != -1 ? requestString.indexOf("\r\n\r\n") + 4 : 0;
-                    bytesArrayStream.write(buffer, bodyStart, bytesRead - bodyStart);
 
-                    Request request = new Request(requestString, bytesArrayStream.toByteArray());
-                    Response response;
-                    if (request.getHost().isEmpty()) {
-                        response = new Response(request, new ResponseFile(400, "No host in request."));
-                        returnException(clientOutputStream, request, response);
+                    Request request = readRequest(clientInputStream);
+                    if (request == null) {
                         break;
-                    } else if (request.getPort() == proxy.getPort() && request.getHost().equals(proxy.getHost())) {
-                        response = new Response(request, new ResponseFile(421, "Proxy address detected in request."));
-                        returnException(clientOutputStream, request, response);
+                    } else if (requestException(request, clientOutputStream)) {
                         break;
-                    } else if (request.isEmpty() || request.isInvalid()) {
-                        response = new Response(request, new ResponseFile(400, "Invalid request."));
-                        returnException(clientOutputStream, request, response);
-                        break;
-                    }
-
-                    if (!request.messageComplete()) {
-                        while (!request.messageComplete())  {
-                            bytesRead = clientInputStream.read(buffer);
-                            if (bytesRead == -1 || bytesRead == 0)
-                                break;
-                            bytesArrayStream.write(buffer, 0, bytesRead);
-                            request.addToMessage(bytesArrayStream.toByteArray());
-                        }
-                    }
-
-                    if (request.getRequestType().equals("CONNECT")) {
+                    } else if (request.getRequestType().equals("CONNECT")) {
                         handleConnect(clientInputStream, clientOutputStream, request);
                         break;
                     }
 
                     Cache cache = proxy.getCache();
+                    Response response;
                     String cachedlog = "-";
                     if (request.getRequestType().equals("GET")) {
                         cache.lock();
@@ -104,6 +73,7 @@ public class ClientHandler implements Runnable {
                 }
             }
         } catch (IOException e) {
+            // client disconnected or network error: end connection quietly
         }  finally {
             try {
                 if (!clientSocket.isClosed()) this.clientSocket.close();
@@ -113,7 +83,77 @@ public class ClientHandler implements Runnable {
         }     
     }
 
-    private static Response handleOrigin(Request request, Proxy proxy) {
+    private Request readRequest (InputStream clientInputStream) {
+        try {
+            byte[] buffer = new byte[BUFFER_SIZE];
+            int bytesRead = clientInputStream.read(buffer);
+            ByteArrayOutputStream bytesArrayStream = new ByteArrayOutputStream();
+            
+            if (bytesRead == -1 || bytesRead == 0) {
+                return null;
+            }
+            String requestString = new String(buffer, 0, bytesRead);
+            int bodyStart = requestString.indexOf("\r\n\r\n");
+            bodyStart = bodyStart == -1 ? 0 : bodyStart + 4;
+            bytesArrayStream.write(buffer, bodyStart, bytesRead - bodyStart);
+
+            Request request = new Request(requestString, bytesArrayStream.toByteArray());
+            if (!request.messageComplete()) {
+                while (!request.messageComplete())  {
+                    bytesRead = clientInputStream.read(buffer);
+                    if (bytesRead == -1 || bytesRead == 0)
+                        break;
+                    bytesArrayStream.write(buffer, 0, bytesRead);
+                    request.setMessageBody(bytesArrayStream.toByteArray());
+                }
+            }
+            return request;
+        }  catch (IOException e) {
+            // client disconnected or network error: end connection quietly
+            return null;
+        }
+    }
+
+    private boolean requestException(Request request, OutputStream clientOutputStream) {
+        Response response;
+        if (request.getHost().isEmpty()) {
+            response = new Response(request, new ResponseFile(400, "No host in request."));
+            returnException(clientOutputStream, request, response);
+            return true;
+        } else if (request.getPort() == proxy.getPort() && request.getHost().equals(proxy.getHost())) {
+            response = new Response(request, new ResponseFile(421, "Proxy address detected in request."));
+            returnException(clientOutputStream, request, response);
+            return true;
+        } else if (request.isEmpty() || request.isInvalid()) {
+            response = new Response(request, new ResponseFile(400, "Invalid request."));
+            returnException(clientOutputStream, request, response);
+            return true;
+        }
+        return false;
+    }
+
+    private void returnException(OutputStream clientOutputStream, Request request, Response response) {
+        // This function is used to send exceptions to the client, if there is an IO exception there
+        // is nothing else we can do but stop gracefully
+        try {
+            clientOutputStream.write(response.buildHeaders().getBytes());
+            clientOutputStream.write(response.getMessageBody());
+        } catch (IOException e) {
+        } finally {
+            printLog("-", request, response);
+        }
+    }
+
+    private void printLog(String cachelog, Request request, Response response) {
+        String[] hostArray = this.clientSocket.getRemoteSocketAddress().toString().split(":");
+        String host = hostArray[0].startsWith("/") ? hostArray[0].substring(1) : hostArray[0];
+        int port = this.clientSocket.getPort();
+        String output = String.format("%s %d %s [%s] \"%s\" %d %d", host, port, cachelog, request.getDateString(), 
+            request.getRequestLine(), response.getStatusCode(), response.getContentLength());
+        System.out.println(output);
+    }
+
+    private Response handleOrigin(Request request, Proxy proxy) {
         Response response;
         try (final Socket originServerSocket = new Socket(request.getHost(), request.getPort());
             final InputStream originInputStream = originServerSocket.getInputStream();
@@ -146,7 +186,7 @@ public class ClientHandler implements Runnable {
                     if (bytesRead == -1 || bytesRead == 0)
                         break;
                     bytesArrayStream.write(buffer, 0, bytesRead);
-                    response.addToMessage(bytesArrayStream.toByteArray());
+                    response.setMessageBody(bytesArrayStream.toByteArray());
                 }
             }
         } catch (UnknownHostException e) {
@@ -195,18 +235,6 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private void returnException(OutputStream clientOutputStream, Request request, Response response) {
-        // This function is used to send exceptions to the client, if there is an IO exception there
-        // is nothing else we can do but stop gracefully
-        try {
-            clientOutputStream.write(response.buildHeaders().getBytes());
-            clientOutputStream.write(response.getMessageBody());
-        } catch (IOException e) {
-        } finally {
-            printLog("-", request, response);
-        }
-    }
-
     private class ConnectionThread implements Runnable {
         private final OutputStream outputStream;
         private final InputStream inputStream;
@@ -230,14 +258,5 @@ public class ClientHandler implements Runnable {
                 }
             }
         }
-    }
-
-    private void printLog(String cachelog, Request request, Response response) {
-        String[] hostArray = this.clientSocket.getRemoteSocketAddress().toString().split(":");
-        String host = hostArray[0].startsWith("/") ? hostArray[0].substring(1) : hostArray[0];
-        int port = this.clientSocket.getPort();
-        String output = String.format("%s %d %s [%s] \"%s\" %d %d", host, port, cachelog, request.getDateString(), 
-            request.getRequestLine(), response.getStatusCode(), response.getContentLength());
-        System.out.println(output);
     }
 }  

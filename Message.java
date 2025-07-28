@@ -1,5 +1,5 @@
 public abstract class Message {
-    private String requestType = "GET";
+    private String requestType = "";
     private final String connectionType = "HTTP/1.1";
     private Header header = new Header(new String[0]);
     private boolean invalid = false;
@@ -43,7 +43,7 @@ public abstract class Message {
         return messageBody;
     }
 
-    protected void setMessageBody(byte[] messageBody) {
+    public void setMessageBody(byte[] messageBody) {
         this.messageBody = messageBody;
     }
  
@@ -63,10 +63,6 @@ public abstract class Message {
             return true;
         }
         return messageBody.length >= contentLength;
-    }
-
-    public void addToMessage(byte[] continuedBody) {
-       messageBody = continuedBody;
     }
 
     public abstract String buildHeaders();

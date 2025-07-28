@@ -7,6 +7,12 @@ public class Proxy {
     private final int timeOut;
     private final Cache cache;
 
+    private Proxy(int port, int timeOut, int maxObjectSize, int maxCacheSize) {
+        this.port = port;
+        this.timeOut = timeOut;
+        cache = new Cache(maxObjectSize, maxCacheSize);
+    }
+
     public String getHost() {
         return host;
     }
@@ -21,12 +27,6 @@ public class Proxy {
 
     public Cache getCache() {
         return cache;
-    }
-
-    private Proxy(int port, int timeOut, int maxObjectSize, int maxCacheSize) {
-        this.port = port;
-        this.timeOut = timeOut;
-        cache = new Cache(maxObjectSize, maxCacheSize);
     }
 
     public static void main(String[] args) {

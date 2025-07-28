@@ -12,7 +12,12 @@ public class ResponseFile {
         502, "Bad Gateway",
         504, "Gateway Timeout"
     );
-    
+
+    public ResponseFile(int statusCodeArg, String bodyPhrase) {
+        this.statusCode = statusCodeArg;
+        this.messageBody = "<h1> Exception " + statusCode + " " + reasonPhraseDict.get(statusCode) + "</h1>" +
+            "<p>" + bodyPhrase + "</p>";
+    }    
     
     public Integer getStatusCode() {
         return statusCode;
@@ -28,11 +33,5 @@ public class ResponseFile {
 
     public String getContentType() {
         return contentType;
-    }
-
-    public ResponseFile(int statusCodeArg, String bodyPhrase) {
-        this.statusCode = statusCodeArg;
-        this.messageBody = "<h1> Exception " + statusCode + " " + reasonPhraseDict.get(statusCode) + "</h1>" +
-            "<p>" + bodyPhrase + "</p>";
     }
 }

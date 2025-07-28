@@ -13,49 +13,6 @@ public class Request extends Message {
     private boolean connectionClose = false;
     private String requestLine = "";
 
-    public String getURL() {
-        return host + ":" + Integer.toString(port) + file;
-    }
-
-    public String getDateString() {
-        return requestDate.format(DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss Z"));
-    }
-    public int getPort() {
-        return port;
-    }
-
-    public String getHost() {
-        return host;
-    }
-
-    public boolean isEmpty() {
-        return empty;
-    }
-
-    public boolean connectionClose() {
-        return connectionClose;
-    }
-
-    public String getClientConnectionHeader() {
-        return clientConnectionHeader;
-    }
-
-    public boolean contentExpected() {
-        return getRequestType().equals("POST");
-    }
-
-
-    public String getRequestLine() {
-        return requestLine;
-    }
-
-    public String buildHeaders() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(getRequestType() + " " + file + " " + getConnectionType() + "\r\n");
-        sb.append(getHeader().getHeaderString() + "\r\n");
-        return sb.toString();
-    }
-
     public Request(String request, byte[] requestBytes) {
         int bodyLocation = request.indexOf("\r\n\r\n");
         if (bodyLocation == -1) {
@@ -129,6 +86,49 @@ public class Request extends Message {
             host = hostNamesParts[0];
             port = Integer.parseInt(hostNamesParts[1]);
         }
+    }
+
+    public String getURL() {
+        return host + ":" + Integer.toString(port) + file;
+    }
+
+    public String getDateString() {
+        return requestDate.format(DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss Z"));
+    }
+    public int getPort() {
+        return port;
+    }
+
+    public String getHost() {
+        return host;
+    }
+
+    public boolean isEmpty() {
+        return empty;
+    }
+
+    public boolean connectionClose() {
+        return connectionClose;
+    }
+
+    public String getClientConnectionHeader() {
+        return clientConnectionHeader;
+    }
+
+    public boolean contentExpected() {
+        return getRequestType().equals("POST");
+    }
+
+
+    public String getRequestLine() {
+        return requestLine;
+    }
+
+    public String buildHeaders() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getRequestType() + " " + file + " " + getConnectionType() + "\r\n");
+        sb.append(getHeader().getHeaderString() + "\r\n");
+        return sb.toString();
     }
 
     private void handleConnect(String requestTarget) {
