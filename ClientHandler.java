@@ -22,8 +22,8 @@ public class ClientHandler implements Runnable {
     }
 
     public void run() {
-        try (InputStream clientInputStream = this.clientSocket.getInputStream();
-            OutputStream clientOutputStream = this.clientSocket.getOutputStream()) {
+        try (final InputStream clientInputStream = this.clientSocket.getInputStream();
+            final OutputStream clientOutputStream = this.clientSocket.getOutputStream()) {
             boolean keepAlive = true;
             while (keepAlive) {
                 try {
@@ -79,7 +79,7 @@ public class ClientHandler implements Runnable {
                         } else {
                             cachedlog = "M";
                             response = handleOrigin(request, proxy);
-                            cache.addResponseToCache(response);
+                            cache.cacheResponse(response);
                         }
                         cache.unlock();
                     } else {
@@ -110,9 +110,9 @@ public class ClientHandler implements Runnable {
 
     private static Response handleOrigin(Request request, Proxy proxy) {
         Response response;
-        try (Socket originServerSocket = new Socket(request.getHost(), request.getPort());
-            InputStream originInputStream = originServerSocket.getInputStream();
-            OutputStream originOutputStream = originServerSocket.getOutputStream()
+        try (final Socket originServerSocket = new Socket(request.getHost(), request.getPort());
+            final InputStream originInputStream = originServerSocket.getInputStream();
+            final OutputStream originOutputStream = originServerSocket.getOutputStream()
         ) {
             originServerSocket.setSoTimeout(proxy.getTimeOut());
             originOutputStream.write(request.buildHeaders().getBytes());
