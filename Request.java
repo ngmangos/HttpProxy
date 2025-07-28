@@ -50,9 +50,10 @@ public class Request extends Message {
     }
 
     public String buildHeaders() {
-        String request = getRequestType() + " " + file + " " + getConnectionType() + "\r\n" +
-            getHeader().getHeaderString() + "\r\n";
-        return request;
+        StringBuilder sb = new StringBuilder();
+        sb.append(getRequestType() + " " + file + " " + getConnectionType() + "\r\n");
+        sb.append(getHeader().getHeaderString() + "\r\n");
+        return sb.toString();
     }
 
     public Request(String request, byte[] requestBytes) {

@@ -23,9 +23,10 @@ public class Response extends Message {
     }
 
     public String buildHeaders() {
-        String response = getConnectionType() + " " + statusCode + " " + reasonPhrase + "\r\n" +
-            getHeader().getHeaderString() + "\r\n";
-        return response;
+        StringBuilder sb = new StringBuilder();
+        sb.append(getConnectionType() + " " + statusCode + " " + reasonPhrase + "\r\n");
+        sb.append(getHeader().getHeaderString() + "\r\n");
+        return sb.toString();
     }
 
     public Response(String response, byte[] responseBytes, Request request) {
@@ -54,7 +55,7 @@ public class Response extends Message {
             setInvalid(true);
             return;
         }
-        
+
         statusCode = Integer.parseInt(responseLineArray[1]);
         reasonPhrase = responseLineArray.length == 3 ? responseLineArray[2] : "";
         if (statusCode != 204 || statusCode != 304)

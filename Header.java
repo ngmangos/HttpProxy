@@ -31,9 +31,9 @@ public class Header {
     }
 
     public String getHeaderString() {
-        String resultString = "";
+        StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, String> entry : headers.entrySet()) 
-            resultString += entry.getKey() + ":" + entry.getValue() + "\r\n";
-        return resultString;
+            sb.append(entry.getKey() + ":" + entry.getValue() + "\r\n");
+        return sb.toString();
     }
 }
