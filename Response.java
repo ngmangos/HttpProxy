@@ -1,11 +1,9 @@
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
+
 import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Response extends Message {
-    private ZonedDateTime responseDate = ZonedDateTime.now();
     private int statusCode = 200;
     private String reasonPhrase = "OK";
     private String requestURL = "";
@@ -28,10 +26,6 @@ public class Response extends Message {
         String response = getConnectionType() + " " + statusCode + " " + reasonPhrase + "\r\n" +
             getHeader().getHeaderString() + "\r\n";
         return response;
-    }
-
-    public String getDateString() {
-        return responseDate.format(DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss Z"));
     }
 
     public Response(String response, byte[] responseBytes, Request request) {

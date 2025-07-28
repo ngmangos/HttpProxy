@@ -227,7 +227,7 @@ public class ClientHandler implements Runnable {
         String[] hostArray = this.clientSocket.getRemoteSocketAddress().toString().split(":");
         String host = hostArray[0].startsWith("/") ? hostArray[0].substring(1) : hostArray[0];
         int port = this.clientSocket.getPort();
-        String output = String.format("%s %d %s [%s] \"%s\" %d %d", host, port, cachelog, response.getDateString(), 
+        String output = String.format("%s %d %s [%s] \"%s\" %d %d", host, port, cachelog, request.getDateString(), 
             request.getRequestLine(), response.getStatusCode(), response.getContentLength());
         System.out.println(output);
     }

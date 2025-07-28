@@ -1,8 +1,10 @@
-import java.util.Arrays;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Request extends Message {
+    private ZonedDateTime requestDate = ZonedDateTime.now();
     private String host = "";
     private int port = 80;
     private String file = "";
@@ -16,6 +18,9 @@ public class Request extends Message {
         return host + ":" + Integer.toString(port) + file;
     }
 
+    public String getDateString() {
+        return requestDate.format(DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss Z"));
+    }
     public int getPort() {
         return port;
     }
