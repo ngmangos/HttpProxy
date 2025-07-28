@@ -35,7 +35,7 @@ public class Cache {
         return cacheMap.get(key);
     }
 
-    public void addResponseToCache(Response response) {
+    public void cacheResponse(Response response) {
         int contentSize = response.getContentLength();
         if (contentSize > maxObjectSize || response.getStatusCode() != 200)
             return;
