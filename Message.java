@@ -7,7 +7,7 @@
  // Parent abstract class of Request and Response to reduce repetition
 // Header and messageBody both initialised to 0 for edge cases (CONNECT 200 response)
 public abstract class Message {
-    private String requestType = "";
+    private String httpMethod = "";
     private final String connectionType = "HTTP/1.1";
     private Header header = new Header(new String[0]);
     private boolean invalid = false;
@@ -17,12 +17,12 @@ public abstract class Message {
 
     public abstract String buildHeaders();
 
-    public String getRequestType() {
-        return requestType;
+    public String getHttpMethod() {
+        return httpMethod;
     }
 
-    protected void setRequestType(String requestType) {
-        this.requestType = requestType;
+    protected void setHttpMethod(String httpMethod) {
+        this.httpMethod = httpMethod;
     }
 
     public boolean isInvalid() {

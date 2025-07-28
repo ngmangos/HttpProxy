@@ -33,7 +33,7 @@ public class ClientHandler implements Runnable {
                         break;
                     } else if (requestException(request, clientOutputStream)) {
                         break;
-                    } else if (request.getRequestType().equals("CONNECT")) {
+                    } else if (request.getHttpMethod().equals("CONNECT")) {
                         handleConnect(clientInputStream, clientOutputStream, request);
                         break;
                     }
@@ -41,7 +41,7 @@ public class ClientHandler implements Runnable {
                     Cache cache = proxy.getCache();
                     Response response;
                     String cachedlog = "-";
-                    if (request.getRequestType().equals("GET")) {
+                    if (request.getHttpMethod().equals("GET")) {
                         cache.lock();
                         if (cache.responseInCache(request)) {
                             cachedlog = "H";

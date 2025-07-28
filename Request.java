@@ -31,9 +31,9 @@ public class Request extends Message {
         }
 
         String[] requestLineArray = requestLine.split(" ");
-        setRequestType(requestLineArray[0].trim());
+        setHttpMethod(requestLineArray[0].trim());
         // Currently do not need (501 Not Implemented) response, can use other tiered exceptions
-        if (!Arrays.asList("GET", "HEAD", "POST", "CONNECT").stream().anyMatch(method -> method.equals(getRequestType()))) {
+        if (!Arrays.asList("GET", "HEAD", "POST", "CONNECT").stream().anyMatch(method -> method.equals(getHttpMethod()))) {
             setInvalid(true);
             return;
         }
@@ -44,7 +44,7 @@ public class Request extends Message {
         }
 
         // Use regex to determine if first line is formatted correctly (both absolute + authority)
-        Pattern getPattern = Pattern.compile(getRequestType() + "\\s+(.*)\\s+HTTP/1\\.1");
+        Pattern getPattern = Pattern.compile(getHttpMethod() + "\\s+(.*)\\s+HTTP/1\\.1");
         Matcher matcher = getPattern.matcher(requestLine);
         if (!matcher.matches()) {
             setInvalid(true);
@@ -52,7 +52,7 @@ public class Request extends Message {
         }
         String requestTarget = requestLineArray[1].trim();
 
-        if (getRequestType().equals("CONNECT")) {
+        if (getHttpMethod().equals("CONNECT")) {
             handleConnect(requestTarget);
             return;
         }                
@@ -121,7 +121,7 @@ public class Request extends Message {
     }
 
     public boolean contentExpected() {
-        return getRequestType().equals("POST");
+        return getHttpMethod().equals("POST");
     }
 
 
@@ -131,7 +131,7 @@ public class Request extends Message {
 
     public String buildHeaders() {
         StringBuilder sb = new StringBuilder();
-        sb.append(getRequestType() + " " + file + " " + getConnectionType() + "\r\n");
+        sb.append(getHttpMethod() + " " + file + " " + getConnectionType() + "\r\n");
         sb.append(getHeader().getHeaderString() + "\r\n");
         return sb.toString();
     }

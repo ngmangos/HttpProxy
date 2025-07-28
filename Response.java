@@ -14,10 +14,10 @@ public class Response extends Message {
     private String requestURL = "";
 
     // Constructor to generate the most simple response: No headers, no body
-    public Response(int statusCode, String reasonPhrase, String requestType) {
+    public Response(int statusCode, String reasonPhrase, String httpMethod) {
         this.statusCode = statusCode;
         this.reasonPhrase = reasonPhrase;
-        setRequestType(requestType);
+        setHttpMethod(httpMethod);
         setHeader(new Header(new String[0]));
     }
 
@@ -26,7 +26,7 @@ public class Response extends Message {
         statusCode = responseFile.getStatusCode();
         reasonPhrase = responseFile.getReasonPhrase();
         setMessageBody(responseFile.getMessageBody().getBytes());
-        setRequestType(request.getRequestType());
+        setHttpMethod(request.getHttpMethod());
 
         Header header = new Header(new String[0]);
         header.updateHeader(request.getClientConnectionHeader());
@@ -70,7 +70,7 @@ public class Response extends Message {
         // Add back the connect header from the request; If connect header empty will do nothing
         header.updateHeader(request.getClientConnectionHeader());
         setHeader(header);
-        setRequestType(request.getRequestType());
+        setHttpMethod(request.getHttpMethod());
         requestURL = request.getURL();
     }
 
@@ -90,7 +90,7 @@ public class Response extends Message {
             return true;
         }
         // Expect content for only POST and GET request types
-        return getRequestType().equals("POST") || getRequestType().equals("GET");
+        return getHttpMethod().equals("POST") || getHttpMethod().equals("GET");
     }
 
     public String buildHeaders() {
