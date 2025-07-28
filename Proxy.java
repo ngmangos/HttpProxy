@@ -23,9 +23,9 @@ public class Proxy {
         return cache;
     }
 
-    private Proxy(int portInput, int timeOutInput, int maxObjectSize, int maxCacheSize) {
-        port = portInput;
-        timeOut = timeOutInput;
+    private Proxy(int port, int timeOut, int maxObjectSize, int maxCacheSize) {
+        this.port = port;
+        this.timeOut = timeOut;
         cache = new Cache(maxObjectSize, maxCacheSize);
     }
 

@@ -56,11 +56,11 @@ public class Cache {
         cacheMap.put(key, response);
     }
 
-    public Cache(int maxCacheSizeInput, int maxObjectSizeInput) throws IllegalArgumentException {
-        if (maxObjectSizeInput > maxCacheSizeInput) {
+    public Cache(int maxObjectSize, int maxCacheSize) throws IllegalArgumentException {
+        if (maxObjectSize > maxCacheSize) {
             throw new IllegalArgumentException("MaxObjectSize greater than MaxCacheSize");
         }
-        maxCacheSize = maxCacheSizeInput;
-        maxObjectSize = maxObjectSizeInput;
+        this.maxCacheSize = maxCacheSize;
+        this.maxObjectSize = maxObjectSize;
     }
 }
