@@ -1,26 +1,23 @@
-// Conditions:
-// No body: GET req, HEAD, Connect -> Do not perform loop
-// Body: GET res, POST
-// If 'Transfer-encoding' present -> wait until 0 or -1 returned
-// If 'Content-length' present
-// In java implementation for InputStream, 0 return for InputStream.read(byte[1024]) is unpredicted
-//      outputStream.write("".getBytes()) will not contact the client
-// bytesRead = -1,0 -> Always stop loop
-// bytesRead cannot already be equal to 0,-1 as the iteration would not continue
-
+/**
+ * @author Nicholas-Mangos
+ * @since 28-07-2025
+ * Code for assignment 1 of UNSW course COMP3331, Computer Networks
+ */
 import java.io.*;
 import java.net.*;
 
+// ClientHandler is the class that handles client connections concurrently by implementing runnable
 public class ClientHandler implements Runnable {
-    private Socket clientSocket;
-    private Proxy proxy;
+    private final Socket clientSocket;
+    private final Proxy proxy;
     private static final int BUFFER_SIZE = 8192;
 
-    public ClientHandler(Socket socket, Proxy proxyServer) {
-        clientSocket = socket;
-        proxy = proxyServer;
+    public ClientHandler(Socket socket, Proxy proxy) {
+        this.clientSocket = socket;
+        this.proxy = proxy;
     }
 
+    // This function takes in a client connection, and reads and processes requests
     public void run() {
         try (final InputStream clientInputStream = this.clientSocket.getInputStream();
             final OutputStream clientOutputStream = this.clientSocket.getOutputStream()) {
@@ -29,6 +26,8 @@ public class ClientHandler implements Runnable {
                 try {
                     clientSocket.setSoTimeout(proxy.getTimeOut());
 
+                    // If request is null then client connection was closed or the request did not contain CRLF
+                    // With 8192 buffer, request string should contain CRLF
                     Request request = readRequest(clientInputStream);
                     if (request == null) {
                         break;
@@ -47,15 +46,20 @@ public class ClientHandler implements Runnable {
                         if (cache.responseInCache(request)) {
                             cachedlog = "H";
                             response = cache.getResponse(request);
+                            cache.unlock();
                         } else {
+                            // Cache is unlocked for handleOrigin (prevent stall)
+                            cache.unlock();
                             cachedlog = "M";
                             response = handleOrigin(request, proxy);
+                            cache.lock();
                             cache.cacheResponse(response);
+                            cache.unlock();
                         }
-                        cache.unlock();
                     } else {
                         response = handleOrigin(request, proxy); 
                     }
+                    // Message body stored as bytes so not converted
                     clientOutputStream.write(response.buildHeaders().getBytes());
                     clientOutputStream.write(response.getMessageBody());
                     clientOutputStream.flush();
@@ -83,15 +87,20 @@ public class ClientHandler implements Runnable {
         }     
     }
 
+    // Read in request bytes from the client input stream
+    // Convert into the request object
     private Request readRequest (InputStream clientInputStream) {
         try {
             byte[] buffer = new byte[BUFFER_SIZE];
             int bytesRead = clientInputStream.read(buffer);
             ByteArrayOutputStream bytesArrayStream = new ByteArrayOutputStream();
             
+            // Return null if client connection was closed or the request did not contain CRLF
+            // With 8192 buffer, request string should contain CRLF
             if (bytesRead == -1 || bytesRead == 0) {
                 return null;
             }
+            // Find the end of the headers with CRLF. Copy bytes directly after that
             String requestString = new String(buffer, 0, bytesRead);
             int headerEnd = requestString.indexOf("\r\n\r\n");
             if (headerEnd == -1) {
@@ -101,6 +110,7 @@ public class ClientHandler implements Runnable {
             bytesArrayStream.write(buffer, bodyStart, bytesRead - bodyStart);
 
             Request request = new Request(requestString.substring(0, headerEnd), bytesArrayStream.toByteArray());
+            // If more bytes expected, read in until connection closed or until length is correct
             if (!request.messageComplete()) {
                 while (!request.messageComplete())  {
                     bytesRead = clientInputStream.read(buffer);
@@ -117,6 +127,7 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    // Determine if request is invalid and return expections accordingly
     private boolean requestException(Request request, OutputStream clientOutputStream) {
         Response response;
         if (request.getHost().isEmpty()) {
@@ -135,18 +146,19 @@ public class ClientHandler implements Runnable {
         return false;
     }
 
+    // Simple helper function to reduce repetition and return exceptions to client
     private void returnException(OutputStream clientOutputStream, Request request, Response response) {
-        // This function is used to send exceptions to the client, if there is an IO exception there
-        // is nothing else we can do but stop gracefully
         try {
             clientOutputStream.write(response.buildHeaders().getBytes());
             clientOutputStream.write(response.getMessageBody());
         } catch (IOException e) {
+            // Stop quietly if there is an IO exception with client
         } finally {
             printLog("-", request, response);
         }
     }
 
+    // Format and print log based on input request and response
     private void printLog(String cachelog, Request request, Response response) {
         String[] hostArray = this.clientSocket.getRemoteSocketAddress().toString().split(":");
         String host = hostArray[0].startsWith("/") ? hostArray[0].substring(1) : hostArray[0];
@@ -156,6 +168,7 @@ public class ClientHandler implements Runnable {
         System.out.println(output);
     }
 
+    // Forward request to the origin server and process/return the response
     private Response handleOrigin(Request request, Proxy proxy) {
         Response response;
         try (final Socket originServerSocket = new Socket(request.getHost(), request.getPort());
@@ -180,7 +193,7 @@ public class ClientHandler implements Runnable {
             int bodyStart = headerEnd == -1 ? 0 : headerEnd + 4;
             bytesArrayStream.write(buffer, bodyStart, bytesRead - bodyStart);
             response = new Response(responseString.substring(0, headerEnd), bytesArrayStream.toByteArray(), request);
-
+            // Similar to the client, if more bytes expected, read in until connection closed or until length is correct
             if (headerEnd == -1 || response.isInvalid()) {
                 return new Response(request, new ResponseFile(500, "Invalid response returned."));
             }
@@ -205,9 +218,8 @@ public class ClientHandler implements Runnable {
         return response;
     }
 
+    // Handles HTTP CONNECT between client and origin server
     private void handleConnect(InputStream clientInputStream, OutputStream clientOutputStream, Request request) {
-        // Construct response to send to client
-        // Check if request is sent to the server this.proxy port and stuff not equal to request port
         Response response;
         if (request.getPort() != 443) {
             response = new Response(request, new ResponseFile(400, "Invalid port for connect."));
@@ -217,16 +229,20 @@ public class ClientHandler implements Runnable {
         try (final Socket originServerSocket = new Socket(request.getHost(), request.getPort());
             final InputStream serverInputStream = originServerSocket.getInputStream();
             final OutputStream serverOutputStream = originServerSocket.getOutputStream()) {
+            // Send extremely simple, headerless response to client if connection established
             response = new Response(200, "Connection Established", "CONNECT");
             clientOutputStream.write(response.buildHeaders().getBytes());
             clientOutputStream.flush();
             printLog("-", request, response);
             
+            // Create concurrent threads to send information between client and server and vice versa
             Thread clientToServerThread = new Thread(new ConnectionThread(clientOutputStream, serverInputStream));
             Thread serverToClientThread = new Thread(new ConnectionThread(serverOutputStream, clientInputStream));
             clientToServerThread.start();
             serverToClientThread.start();
             
+            // Wait until both threads are closed before running any more code
+            // (make sure sockets not accidentally closed prematurely)
             clientToServerThread.join();
             serverToClientThread.join();
         } catch (ConnectException e) {
@@ -239,6 +255,7 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    // Private thread class (implement runnable) to send code between any input to an output
     private class ConnectionThread implements Runnable {
         private final OutputStream outputStream;
         private final InputStream inputStream;

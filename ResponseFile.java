@@ -1,5 +1,11 @@
+/**
+ * @author Nicholas-Mangos
+ * @since 28-07-2025
+ * Code for assignment 1 of UNSW course COMP3331, Computer Networks
+ */
 import java.util.Map;
 
+// Generates simple HTML file to communicate a expection/response based on a status code
 public class ResponseFile {
     private Integer statusCode;
     private String messageBody;

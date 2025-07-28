@@ -1,12 +1,20 @@
+/**
+ * @author Nicholas-Mangos
+ * @since 28-07-2025
+ * Code for assignment 1 of UNSW course COMP3331, Computer Networks
+ */
 import java.io.*;
 import java.net.*;
 
+// Class for the proxy server itself
+// Main function contains executable code for assignment
 public class Proxy {
     private static final String host = "127.0.0.1"; // 20 seconds in milliseconds
     private final int port;
     private final int timeOut;
     private final Cache cache;
 
+    // Class used as easy method to store and pass on essential information
     private Proxy(int port, int timeOut, int maxObjectSize, int maxCacheSize) {
         this.port = port;
         this.timeOut = timeOut;
@@ -29,6 +37,7 @@ public class Proxy {
         return cache;
     }
 
+    // Main function for assignment. Only prints error messages if original arguments incorrect
     public static void main(String[] args) {
         if (args.length != 4) {
             System.out.println("Usage: java WebServer PORT TIMEOUT MAXOBJECT MAXCACHE");
@@ -47,7 +56,7 @@ public class Proxy {
             System.exit(1);
             return;
         } catch (IllegalArgumentException e) {
-            System.err.println(String.format("MaxCacheSize (%s) cannot be smaller than MaxCacheSize (%s)", args[3], args[2]));
+            System.err.println(e.getMessage());
             System.exit(1);
             return;  
         }
@@ -55,9 +64,9 @@ public class Proxy {
         try (ServerSocket serverSocket = new ServerSocket()) {
             serverSocket.setReuseAddress(true);
             serverSocket.bind(new InetSocketAddress(proxy.getHost(), proxy.getPort()));
-            
             while (true) {
                 try {
+                    // Accept new connections to proxy server and create threads for each (concurrent clients)
                     Socket clientSocket = serverSocket.accept();
                     new Thread(new ClientHandler(clientSocket, proxy)).start();
                 } catch (IOException e) {
