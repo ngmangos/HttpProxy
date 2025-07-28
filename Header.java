@@ -1,8 +1,8 @@
 import java.util.Map;
-import java.util.Hashtable;
+import java.util.HashMap;
 
 public class Header {
-    private final Map<String, String> headers = new Hashtable<>();
+    private final Map<String, String> headers = new HashMap<>();
 
     public Header(String[] lines) {
         for (String header : lines) {
