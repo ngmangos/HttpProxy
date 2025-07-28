@@ -1,6 +1,6 @@
 public abstract class Message {
     private String requestType = "GET";
-    private String connectionType = "HTTP/1.1";
+    private final String connectionType = "HTTP/1.1";
     private Header header = new Header(new String[0]);
     private boolean invalid = false;
     private byte[] messageBody = new byte[0];
@@ -29,10 +29,6 @@ public abstract class Message {
 
     public String getConnectionType() {
         return connectionType;
-    }
-
-    protected void setConnectionType(String connectionType) {
-        this.connectionType = connectionType;
     }
 
     protected Header getHeader() {

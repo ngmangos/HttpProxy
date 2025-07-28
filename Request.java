@@ -4,11 +4,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Request extends Message {
-    private ZonedDateTime requestDate = ZonedDateTime.now();
+    private final ZonedDateTime requestDate = ZonedDateTime.now();
     private String host = "";
     private int port = 80;
     private String file = "";
-    private Header header;
     private boolean empty = false;
     private String clientConnectionHeader = "Connection: keep-alive";
     private boolean connectionClose = false;
@@ -52,7 +51,7 @@ public class Request extends Message {
 
     public String buildHeaders() {
         String request = getRequestType() + " " + file + " " + getConnectionType() + "\r\n" +
-            header.getHeaderString() + "\r\n";
+            getHeader().getHeaderString() + "\r\n";
         return request;
     }
 
@@ -84,8 +83,6 @@ public class Request extends Message {
             return;
         }
 
-        setConnectionType(requestLineArray[2]);
-
         Pattern getPattern = Pattern.compile(getRequestType() + "\\s+(.*)\\s+HTTP/1\\.1");
         Matcher matcher = getPattern.matcher(requestLine);
 
@@ -94,7 +91,7 @@ public class Request extends Message {
             return;
         }
 
-        header = new Header(Arrays.copyOfRange(headerLines, 1, headerLines.length));
+        Header header = new Header(Arrays.copyOfRange(headerLines, 1, headerLines.length));
 
         String requestTarget = requestLineArray[1].trim();
 

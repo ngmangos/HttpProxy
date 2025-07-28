@@ -54,8 +54,7 @@ public class Response extends Message {
             setInvalid(true);
             return;
         }
-
-        setConnectionType(responseLineArray[0]);
+        
         statusCode = Integer.parseInt(responseLineArray[1]);
         reasonPhrase = responseLineArray.length == 3 ? responseLineArray[2] : "";
         if (statusCode != 204 || statusCode != 304)

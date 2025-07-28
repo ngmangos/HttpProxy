@@ -2,7 +2,7 @@ import java.util.Map;
 import java.util.Hashtable;
 
 public class Header {
-    private Map<String, String> headers = new Hashtable<>();
+    private final Map<String, String> headers = new Hashtable<>();
 
     public Header(String[] lines) {
         for (String header : lines) {

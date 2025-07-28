@@ -6,10 +6,10 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class Cache {
     private final ReentrantLock lock = new ReentrantLock();
-    private int maxCacheSize;
-    private int maxObjectSize;
-    private Map<String, Response> cacheMap = new HashMap<String, Response>();
-    private LinkedList<String> cacheList = new LinkedList<String>();
+    private final int maxCacheSize;
+    private final int maxObjectSize;
+    private final Map<String, Response> cacheMap = new HashMap<String, Response>();
+    private final LinkedList<String> cacheList = new LinkedList<String>();
     private int totalCacheStorage = 0;
 
     public void lock() { 

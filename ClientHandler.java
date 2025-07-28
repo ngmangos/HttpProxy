@@ -1,5 +1,3 @@
-import java.io.*;
-import java.net.*;
 // Conditions:
 // No body: GET req, HEAD, Connect -> Do not perform loop
 // Body: GET res, POST
@@ -9,6 +7,9 @@ import java.net.*;
 //      outputStream.write("".getBytes()) will not contact the client
 // bytesRead = -1,0 -> Always stop loop
 // bytesRead cannot already be equal to 0,-1 as the iteration would not continue
+
+import java.io.*;
+import java.net.*;
 
 public class ClientHandler implements Runnable {
     private Socket clientSocket;

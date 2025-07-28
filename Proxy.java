@@ -3,9 +3,9 @@ import java.net.*;
 
 public class Proxy {
     private static final String host = "127.0.0.1"; // 20 seconds in milliseconds
-    private int port;
-    private int timeOut;
-    private Cache cache;
+    private final int port;
+    private final int timeOut;
+    private final Cache cache;
 
     public String getHost() {
         return host;
