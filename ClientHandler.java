@@ -34,7 +34,7 @@ public class ClientHandler implements Runnable {
                     } else if (requestException(request, clientOutputStream)) {
                         break;
                     } else if (request.getHttpMethod().equals("CONNECT")) {
-                        handleConnect(clientInputStream, clientOutputStream, request);
+                        handleConnect(clientInputStream, clientOutputStream, clientSocket, request);
                         break;
                     }
 
@@ -151,6 +151,7 @@ public class ClientHandler implements Runnable {
         try {
             clientOutputStream.write(response.buildHeaders().getBytes());
             clientOutputStream.write(response.getMessageBody());
+            clientOutputStream.flush();
         } catch (IOException e) {
             // Stop quietly if there is an IO exception with client
         } finally {
@@ -219,8 +220,9 @@ public class ClientHandler implements Runnable {
     }
 
     // Handles HTTP CONNECT between client and origin server
-    private void handleConnect(InputStream clientInputStream, OutputStream clientOutputStream, Request request) {
+    private void handleConnect(InputStream clientInputStream, OutputStream clientOutputStream, Socket clientSocket, Request request) {
         Response response;
+        boolean logPrinted = false;
         if (request.getPort() != 443) {
             response = new Response(request, new ResponseFile(400, "Invalid port for connect."));
             returnException(clientOutputStream, request, response);
@@ -234,6 +236,8 @@ public class ClientHandler implements Runnable {
             clientOutputStream.write(response.buildHeaders().getBytes());
             clientOutputStream.flush();
             printLog("-", request, response);
+            logPrinted = true;
+            clientSocket.setSoTimeout(0);
             
             // Create concurrent threads to send information between client and server and vice versa
             Thread clientToServerThread = new Thread(new ConnectionThread(clientOutputStream, serverInputStream));
@@ -245,13 +249,24 @@ public class ClientHandler implements Runnable {
             // (make sure sockets not accidentally closed prematurely)
             clientToServerThread.join();
             serverToClientThread.join();
+            // Return/print exception responses if initial response was never sent
+        } catch (UnknownHostException e) {
+            if (!logPrinted) {
+                response = new Response(request, new ResponseFile(502, "Could not resolve."));
+                returnException(clientOutputStream, request, response);
+            }
         } catch (ConnectException e) {
-            response = new Response(request, new ResponseFile(502, "Connection refused."));
-            returnException(clientOutputStream, request, response);
+            if (!logPrinted) {
+                response = new Response(request, new ResponseFile(502, "Connection refused."));
+                returnException(clientOutputStream, request, response);
+            }
         } catch (IOException e) {
-            // IO Error with streams
+            if (!logPrinted) {
+                response = new Response(request, new ResponseFile(502, "Closed unexpectedly."));
+                returnException(clientOutputStream, request, response);
+            }
         } catch (InterruptedException e) {
-            // do something
+            // Error with thread.join(), gracefully close
         }
     }
 
@@ -275,6 +290,7 @@ public class ClientHandler implements Runnable {
                     outputStream.write(buffer, 0, bytesRead);
                     outputStream.flush();
                 } catch (IOException e) {
+                    // Gracefully close socket if exception occurs
                     return;
                 }
             }
