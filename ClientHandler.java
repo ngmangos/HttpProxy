@@ -163,9 +163,9 @@ public class ClientHandler implements Runnable {
             returnException(clientOutputStream, request, response);
             return;
         }
-        try (Socket originServerSocket = new Socket(request.getHost(), request.getPort());
-            InputStream serverInputStream = originServerSocket.getInputStream();
-            OutputStream serverOutputStream = originServerSocket.getOutputStream()) {
+        try (final Socket originServerSocket = new Socket(request.getHost(), request.getPort());
+            final InputStream serverInputStream = originServerSocket.getInputStream();
+            final OutputStream serverOutputStream = originServerSocket.getOutputStream()) {
             response = new Response(200, "Connection Established", "CONNECT");
             clientOutputStream.write(response.buildHeaders().getBytes());
             clientOutputStream.flush();
@@ -201,8 +201,8 @@ public class ClientHandler implements Runnable {
     }
 
     private class ConnectionThread implements Runnable {
-        private OutputStream outputStream;
-        private InputStream inputStream;
+        private final OutputStream outputStream;
+        private final InputStream inputStream;
 
         public ConnectionThread(OutputStream outputStream, InputStream inputStream) {
             this.outputStream = outputStream;
