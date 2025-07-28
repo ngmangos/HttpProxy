@@ -37,9 +37,9 @@ public class Cache {
 
     public void cacheResponse(Response response) {
         int contentSize = response.getContentLength();
-        if (contentSize > maxObjectSize || response.getStatusCode() != 200)
+        if (contentSize > maxObjectSize || response.getStatusCode() != 200) {
             return;
-
+        }
         String key = response.getRequestURL();
         if (cacheMap.containsKey(key)) {
             cacheList.removeFirstOccurrence(key);

@@ -13,8 +13,9 @@ public class Header {
 
     public void updateHeader(String newHeader) {
         String[] headerParts = newHeader.split(":", 2);
-        if (headerParts.length < 2)
+        if (headerParts.length < 2) {
             return;
+        }
         headers.put(headerParts[0].trim().toLowerCase(), headerParts[1].trim().toLowerCase());
     }
 

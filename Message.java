@@ -48,12 +48,13 @@ public abstract class Message {
     }
  
     public boolean messageComplete() {
-        if (!contentExpected())
+        if (!contentExpected()) {
             return true;
-        if (header.hasHeader("transfer-encoding"))
+        } else if (header.hasHeader("transfer-encoding")) {
             return false;
-        if (!header.hasHeader("content-length"))
+        } else if (!header.hasHeader("content-length")) {
             return true;
+        }
         String headerString = header.getHeader("content-length");
         int contentLength = 0;
         try {

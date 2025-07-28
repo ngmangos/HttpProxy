@@ -17,8 +17,9 @@ public class Response extends Message {
     }
 
     public boolean contentExpected() {
-        if (statusCode < 200 || statusCode > 299)
+        if (statusCode < 200 || statusCode > 299) {
             return true;
+        }
         return getRequestType().equals("POST") || getRequestType().equals("GET");
     }
 
@@ -58,8 +59,9 @@ public class Response extends Message {
 
         statusCode = Integer.parseInt(responseLineArray[1]);
         reasonPhrase = responseLineArray.length == 3 ? responseLineArray[2] : "";
-        if (statusCode != 204 || statusCode != 304)
+        if (statusCode != 204 || statusCode != 304) {
             setMessageBody(responseBytes);
+        }
 
         Pattern getPattern = Pattern.compile("HTTP/1\\.1\\s+(\\d{3})(.*)");
         Matcher matcher = getPattern.matcher(responseLine);

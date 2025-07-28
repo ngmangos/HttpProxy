@@ -36,11 +36,11 @@ public class Proxy {
         }
         Proxy proxy;
         try {
-            int port = Integer.parseInt(args[0]);
-            int timeOut = Integer.parseInt(args[1]) * 1000;
-            int maxObjectSize = Integer.parseInt(args[2]);
-            int maxCacheSize = Integer.parseInt(args[3]);
-            proxy = new Proxy(port, timeOut, maxObjectSize, maxCacheSize);            
+            int portArg = Integer.parseInt(args[0]);
+            int timeOutArg = Integer.parseInt(args[1]) * 1000;
+            int maxObjectSizeArg = Integer.parseInt(args[2]);
+            int maxCacheSizeArg = Integer.parseInt(args[3]);
+            proxy = new Proxy(portArg, timeOutArg, maxObjectSizeArg, maxCacheSizeArg);            
         } catch (NumberFormatException e) {
             String errorPrintout = "Invalid input numbers; Port: %s, Timeout: %s, MaxObjectSize: %s, MaxCacheSize: %s";
             System.err.println(String.format(errorPrintout, args[0], args[1], args[2], args[3]));

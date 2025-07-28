@@ -32,7 +32,9 @@ public class ClientHandler implements Runnable {
                     int bytesRead = clientInputStream.read(buffer);
                     ByteArrayOutputStream bytesArrayStream = new ByteArrayOutputStream();
                     
-                    if (bytesRead == -1 || bytesRead == 0) break;
+                    if (bytesRead == -1 || bytesRead == 0) {
+                        break;
+                    }
                     
                     String requestString = new String(buffer, 0, bytesRead);
                     int bodyStart = requestString.indexOf("\r\n\r\n") != -1 ? requestString.indexOf("\r\n\r\n") + 4 : 0;
@@ -83,8 +85,7 @@ public class ClientHandler implements Runnable {
                         }
                         cache.unlock();
                     } else {
-                        response = handleOrigin(request, proxy);
-                        
+                        response = handleOrigin(request, proxy); 
                     }
                     clientOutputStream.write(response.buildHeaders().getBytes());
                     clientOutputStream.write(response.getMessageBody());
@@ -95,8 +96,10 @@ public class ClientHandler implements Runnable {
                     }
                     printLog(cachedlog, request, response);
                 } catch (SocketTimeoutException e) {
+                    // client timed out: end connection quietly
                     break;
                 }  catch (IOException e) {
+                    // client disconnected or network error: end connection quietly
                     break;
                 }
             }
@@ -104,8 +107,10 @@ public class ClientHandler implements Runnable {
         }  finally {
             try {
                 if (!clientSocket.isClosed()) this.clientSocket.close();
-            } catch (IOException e) {}        
-        }   
+            } catch (IOException e) {
+                // client disconnected or network error: end connection quietly
+            }        
+        }     
     }
 
     private static Response handleOrigin(Request request, Proxy proxy) {
@@ -123,16 +128,18 @@ public class ClientHandler implements Runnable {
             int bytesRead = originInputStream.read(buffer);
             ByteArrayOutputStream bytesArrayStream = new ByteArrayOutputStream();
 
-            if (bytesRead == -1 || bytesRead == 0) throw new IOException("Closed unexpectedly.");
+            if (bytesRead == -1 || bytesRead == 0) {
+                throw new IOException("Closed unexpectedly.");
+            }
             
             String responseString = new String(buffer, 0, bytesRead);
             int bodyStart = responseString.indexOf("\r\n\r\n") != -1 ? responseString.indexOf("\r\n\r\n") + 4 : 0;
             bytesArrayStream.write(buffer, bodyStart, bytesRead - bodyStart);
             response = new Response(responseString, bytesArrayStream.toByteArray(), request);
             
-            if (response.isInvalid()) 
+            if (response.isInvalid()) {
                 return new Response(request, new ResponseFile(500, "Invalid response returned."));
-
+            }
             if (!response.messageComplete()) {
                 while (!response.messageComplete())  {
                     bytesRead = originInputStream.read(buffer);
