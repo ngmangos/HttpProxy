@@ -8,24 +8,17 @@ public class Request extends Message {
     private String host = "";
     private int port = 80;
     private String file = "";
-    private boolean empty = false;
     private String clientConnectionHeader = "Connection: keep-alive";
     private boolean connectionClose = false;
     private String requestLine = "";
 
     public Request(String request, byte[] requestBytes) {
-        int bodyLocation = request.indexOf("\r\n\r\n");
-        if (bodyLocation == -1) {
-            empty = true;
-            return;
-        }
-
-        String[] headerLines = request.substring(0, bodyLocation).split("\r\n");
+        String[] headerLines = request.split("\r\n");
         setMessageBody(requestBytes);
         
         requestLine = headerLines.length > 0 ? headerLines[0].trim() : "";
         if (requestLine.isEmpty()) {
-            empty = true;
+            setInvalid(true);
             return;
         }
 
@@ -48,16 +41,15 @@ public class Request extends Message {
             setInvalid(true);
             return;
         }
-
-        Header header = new Header(Arrays.copyOfRange(headerLines, 1, headerLines.length));
-
         String requestTarget = requestLineArray[1].trim();
 
         if (getRequestType().equals("CONNECT")) {
             handleConnect(requestTarget);
             return;
-        }
+        }                
         
+        Header header = new Header(Arrays.copyOfRange(headerLines, 1, headerLines.length));
+
         clientConnectionHeader = "Connection: " + header.getHeader("Connection");
         connectionClose = header.getHeader("Proxy-Connection").toLowerCase().contains("close");
         connectionClose = header.getHeader("Connection").toLowerCase().contains("close");
@@ -66,7 +58,10 @@ public class Request extends Message {
         header.updateHeader("Connection: close");
         header.removeHeader("Proxy-Connection");
         setHeader(header);
+        processRequestTarget(requestTarget);
+    }
 
+    private void processRequestTarget(String requestTarget) {
         if (requestTarget.toLowerCase().startsWith("http://")) {
             requestTarget = requestTarget.substring(7);
         } else {
@@ -75,18 +70,19 @@ public class Request extends Message {
         }  
         
         String[] requestTargetArray = requestTarget.split("/", 2);
-        host = requestTargetArray[0].trim().toLowerCase();
+        this.host = requestTargetArray[0].trim().toLowerCase();
         if (requestTargetArray.length < 2) {
-            file = "/";
-        } else 
-            file = "/" + requestTargetArray[1];
-
+            this.file = "/";
+        } else {
+            this.file = "/" + requestTargetArray[1];
+        }
+            
         if (host.contains(":")) {
             String[] hostNamesParts = host.split(":");
-            host = hostNamesParts[0];
-            port = Integer.parseInt(hostNamesParts[1]);
+            this.host = hostNamesParts[0];
+            this.port = Integer.parseInt(hostNamesParts[1]);
         }
-    }
+    }  
 
     public String getURL() {
         return host + ":" + Integer.toString(port) + file;
@@ -101,10 +97,6 @@ public class Request extends Message {
 
     public String getHost() {
         return host;
-    }
-
-    public boolean isEmpty() {
-        return empty;
     }
 
     public boolean connectionClose() {

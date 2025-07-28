@@ -32,19 +32,7 @@ public class Response extends Message {
 
     // Constructor to generate responses based on origin server output
     public Response(String response, byte[] responseBytes, Request request) {
-        int bodyLocation = response.indexOf("\r\n\r\n");
-        if (bodyLocation == -1) {
-            setInvalid(true);
-            return;
-        }
-
-        String[] responseArray = response.split("\r\n\r\n", 2);
-        if (responseArray.length != 2) {
-            setInvalid(true);
-            return;
-        }
-
-        String[] lines = response.substring(0, bodyLocation).split("\r\n");;
+        String[] lines = response.split("\r\n");
 
         String responseLine = lines.length > 0 ? lines[0].trim() : "";
         if (responseLine.isEmpty()) {

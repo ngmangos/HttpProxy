@@ -93,11 +93,14 @@ public class ClientHandler implements Runnable {
                 return null;
             }
             String requestString = new String(buffer, 0, bytesRead);
-            int bodyStart = requestString.indexOf("\r\n\r\n");
-            bodyStart = bodyStart == -1 ? 0 : bodyStart + 4;
+            int headerEnd = requestString.indexOf("\r\n\r\n");
+            if (headerEnd == -1) {
+                return null;
+            }
+            int bodyStart = headerEnd == -1 ? 0 : headerEnd + 4;
             bytesArrayStream.write(buffer, bodyStart, bytesRead - bodyStart);
 
-            Request request = new Request(requestString, bytesArrayStream.toByteArray());
+            Request request = new Request(requestString.substring(0, headerEnd), bytesArrayStream.toByteArray());
             if (!request.messageComplete()) {
                 while (!request.messageComplete())  {
                     bytesRead = clientInputStream.read(buffer);
@@ -124,7 +127,7 @@ public class ClientHandler implements Runnable {
             response = new Response(request, new ResponseFile(421, "Proxy address detected in request."));
             returnException(clientOutputStream, request, response);
             return true;
-        } else if (request.isEmpty() || request.isInvalid()) {
+        } else if (request.isInvalid()) {
             response = new Response(request, new ResponseFile(400, "Invalid request."));
             returnException(clientOutputStream, request, response);
             return true;
@@ -173,11 +176,12 @@ public class ClientHandler implements Runnable {
             }
             
             String responseString = new String(buffer, 0, bytesRead);
-            int bodyStart = responseString.indexOf("\r\n\r\n") != -1 ? responseString.indexOf("\r\n\r\n") + 4 : 0;
+            int headerEnd = responseString.indexOf("\r\n\r\n");
+            int bodyStart = headerEnd == -1 ? 0 : headerEnd + 4;
             bytesArrayStream.write(buffer, bodyStart, bytesRead - bodyStart);
-            response = new Response(responseString, bytesArrayStream.toByteArray(), request);
-            
-            if (response.isInvalid()) {
+            response = new Response(responseString.substring(0, headerEnd), bytesArrayStream.toByteArray(), request);
+
+            if (headerEnd == -1 || response.isInvalid()) {
                 return new Response(request, new ResponseFile(500, "Invalid response returned."));
             }
             if (!response.messageComplete()) {
