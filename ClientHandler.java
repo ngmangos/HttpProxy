@@ -106,8 +106,10 @@ public class ClientHandler implements Runnable {
             if (headerEnd == -1) {
                 return null;
             }
-            int bodyStart = headerEnd == -1 ? 0 : headerEnd + 4;
-            bytesArrayStream.write(buffer, bodyStart, bytesRead - bodyStart);
+            int bodyStart = headerEnd + 4;
+            if (bytesRead > bodyStart) {
+                bytesArrayStream.write(buffer, bodyStart, bytesRead - bodyStart);
+            }
 
             Request request = new Request(requestString.substring(0, headerEnd), bytesArrayStream.toByteArray());
             // If more bytes expected, read in until connection closed or until length is correct

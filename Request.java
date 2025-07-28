@@ -75,6 +75,8 @@ public class Request extends Message {
     private void processRequestTarget(String requestTarget) {
         if (requestTarget.toLowerCase().startsWith("http://")) {
             requestTarget = requestTarget.substring(7);
+        } else if (requestTarget.toLowerCase().startsWith("https://")) {
+            requestTarget = requestTarget.substring(8);
         } else {
             setInvalid(true);
             return;
