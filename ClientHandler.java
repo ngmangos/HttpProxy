@@ -14,6 +14,7 @@ import java.net.*;
 public class ClientHandler implements Runnable {
     private Socket clientSocket;
     private Proxy proxy;
+    private static final int BUFFER_SIZE = 8192;
 
     public ClientHandler(Socket socket, Proxy proxyServer) {
         clientSocket = socket;
@@ -27,7 +28,7 @@ public class ClientHandler implements Runnable {
             while (keepAlive) {
                 try {
                     clientSocket.setSoTimeout(proxy.getTimeOut());
-                    byte[] buffer = new byte[8192];
+                    byte[] buffer = new byte[BUFFER_SIZE];
                     int bytesRead = clientInputStream.read(buffer);
                     ByteArrayOutputStream bytesArrayStream = new ByteArrayOutputStream();
                     
@@ -118,7 +119,7 @@ public class ClientHandler implements Runnable {
             originOutputStream.write(request.getMessageBody());
             originOutputStream.flush();
 
-            byte[] buffer = new byte[8192];
+            byte[] buffer = new byte[BUFFER_SIZE];
             int bytesRead = originInputStream.read(buffer);
             ByteArrayOutputStream bytesArrayStream = new ByteArrayOutputStream();
 
@@ -211,7 +212,7 @@ public class ClientHandler implements Runnable {
         public void run() {
             while (true) {
                 try {
-                    byte[] buffer = new byte[1024];
+                    byte[] buffer = new byte[BUFFER_SIZE];
                     int bytesRead = inputStream.read(buffer);
                     if (bytesRead == -1 || bytesRead == 0) break;
 
