@@ -33,11 +33,9 @@ public class Cache {
         return cacheMap.containsKey(key);
     }
 
-    public Response getResponse(Request request) throws NoSuchElementException {
+    // 
+    public Response getResponse(Request request) {
         String key = request.getURL();
-        if (!cacheMap.containsKey(key)) {
-            throw new NoSuchElementException("Key " + key + " not found");
-        }
         cacheList.removeFirstOccurrence(key);
         cacheList.addFirst(key);
         return cacheMap.get(key);
