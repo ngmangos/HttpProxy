@@ -26,7 +26,7 @@ public class ClientHandler implements Runnable {
             while (keepAlive) {
                 try {
                     clientSocket.setSoTimeout(proxy.getTimeOut());
-                    byte[] buffer = new byte[1024];
+                    byte[] buffer = new byte[8192];
                     int bytesRead = clientInputStream.read(buffer);
                     ByteArrayOutputStream bytesArrayStream = new ByteArrayOutputStream();
                     
@@ -117,7 +117,7 @@ public class ClientHandler implements Runnable {
             originOutputStream.write(request.getMessageBody());
             originOutputStream.flush();
 
-            byte[] buffer = new byte[1024];
+            byte[] buffer = new byte[8192];
             int bytesRead = originInputStream.read(buffer);
             ByteArrayOutputStream bytesArrayStream = new ByteArrayOutputStream();
 
