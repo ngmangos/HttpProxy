@@ -57,11 +57,12 @@ public class Proxy {
             serverSocket.bind(new InetSocketAddress(proxy.getHost(), proxy.getPort()));
             
             while (true) {
-                Socket clientSocket;
                 try {
-                    clientSocket = serverSocket.accept();
+                    Socket clientSocket = serverSocket.accept();
+                    System.out.println("Accepted connection");
                     new Thread(new ClientHandler(clientSocket, proxy)).start();
                 } catch (IOException e) {
+                    System.err.println("Error accepting connection: " + e.getMessage());
                 }
             }
         } catch (IOException e) {
