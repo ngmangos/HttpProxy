@@ -34,7 +34,7 @@ public class ClientHandler implements Runnable {
                     } else if (requestException(request, clientOutputStream)) {
                         break;
                     } else if (request.getHttpMethod().equals("CONNECT")) {
-                        handleConnect(clientInputStream, clientOutputStream, clientSocket, request);
+                        handleConnect(clientInputStream, clientOutputStream, clientSocket, proxy.getTimeOut(), request);
                         break;
                     }
 
@@ -222,7 +222,7 @@ public class ClientHandler implements Runnable {
     }
 
     // Handles HTTP CONNECT between client and origin server
-    private void handleConnect(InputStream clientInputStream, OutputStream clientOutputStream, Socket clientSocket, Request request) {
+    private void handleConnect(InputStream clientInputStream, OutputStream clientOutputStream, Socket clientSocket, int timeOut, Request request) {
         Response response;
         boolean logPrinted = false;
         if (request.getPort() != 443) {
@@ -239,11 +239,10 @@ public class ClientHandler implements Runnable {
             clientOutputStream.flush();
             printLog("-", request, response);
             logPrinted = true;
-            clientSocket.setSoTimeout(0);
             
             // Create concurrent threads to send information between client and server and vice versa
-            Thread clientToServerThread = new Thread(new ConnectionThread(clientOutputStream, serverInputStream));
-            Thread serverToClientThread = new Thread(new ConnectionThread(serverOutputStream, clientInputStream));
+            Thread clientToServerThread = new Thread(new ConnectionThread(clientOutputStream, serverInputStream, originServerSocket, timeOut));
+            Thread serverToClientThread = new Thread(new ConnectionThread(serverOutputStream, clientInputStream, clientSocket, timeOut));
             clientToServerThread.start();
             serverToClientThread.start();
             
@@ -273,18 +272,25 @@ public class ClientHandler implements Runnable {
     }
 
     // Private thread class (implement runnable) to send code between any input to an output
+    // Timeout is set for the socket of the input stream
     private class ConnectionThread implements Runnable {
         private final OutputStream outputStream;
         private final InputStream inputStream;
+        private final Socket socket;
+        private final int timeOut;
 
-        public ConnectionThread(OutputStream outputStream, InputStream inputStream) {
+
+        public ConnectionThread(OutputStream outputStream, InputStream inputStream, Socket socket, int timeOut) {
             this.outputStream = outputStream;
             this.inputStream = inputStream;
+            this.socket = socket;
+            this.timeOut = timeOut;
         }
 
         public void run() {
             while (true) {
                 try {
+                    socket.setSoTimeout(timeOut);
                     byte[] buffer = new byte[BUFFER_SIZE];
                     int bytesRead = inputStream.read(buffer);
                     if (bytesRead == -1 || bytesRead == 0) break;
